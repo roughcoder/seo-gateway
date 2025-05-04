@@ -1,0 +1,49 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Fastify Application Structure Guide (v5)
+
+This document outlines the structure and conventions used in this Fastify v5 TypeScript application.
+
+## Core Technology
+
+*   **Framework:** [Fastify v5](mdc:https:/fastify.dev)
+*   **Language:** TypeScript
+*   **Module System:** ES Modules (`"type": "module"` in [package.json](mdc:package.json))
+
+## Entry Point & Configuration
+
+*   The main server entry point is [app/index.ts](mdc:app/index.ts).
+*   This file initializes the Fastify server instance and registers global plugins and configurations.
+*   Since we use ES Modules, `__dirname` is derived using `import.meta.url` at the top of [app/index.ts](mdc:app/index.ts).
+
+## Directory Structure & Conventions
+
+*   **`app/`**: Contains all the application source code.
+    *   **`index.ts`**: ([app/index.ts](mdc:app/index.ts)) Main server setup. Registers essential plugins like `@fastify/sensible`, `@fastify/static`, `@fastify/swagger`, `@fastify/swagger-ui`, and autoloads plugins and routes.
+    *   **`plugins/`**: ([app/plugins](mdc:app/plugins)) Contains Fastify plugins designed to be encapsulated or add decorators/hooks.
+        *   Plugins in this directory (like [auth.ts](mdc:app/plugins/auth.ts)) are automatically loaded by `fastify-autoload` configured in [app/index.ts](mdc:app/index.ts).
+        *   The [auth.ts](mdc:app/plugins/auth.ts) plugin adds a global `onRequest` hook to enforce API key authentication for routes under `/api/`.
+    *   **`routes/`**: ([app/routes](mdc:app/routes)) Defines the application's API routes.
+        *   **`api/`**: ([app/routes/api](mdc:app/routes/api)) The base directory for all API endpoints.
+        *   **Autoloading Routes:** Routes are loaded using `fastify-autoload`, configured in [app/index.ts](mdc:app/index.ts) to watch the `app/routes/api` directory.
+        *   **Directory-based Routing:** The `dirNameRoutePrefix: true` option is enabled. This means the directory structure *within* `app/routes/api` directly maps to the URL path.
+            *   Example: The handler in [app/routes/api/keyword/serp/index.ts](mdc:app/routes/api/keyword/serp/index.ts) defines the route for `/keyword/serp`. The `GET /` defined within that file becomes `GET /keyword/serp/`.
+    *   **`public/`**: ([app/public](mdc:app/public)) Contains static assets (HTML, CSS, JS, images).
+        *   These files are served from the root URL (`/`) using `@fastify/static`, configured in [app/index.ts](mdc:app/index.ts). Example: [app/public/index.html](mdc:app/public/index.html) is accessible at `/`.
+
+## API & Documentation
+
+*   **API Base Path:** All API routes are implicitly under the `/` path relative to the autoload starting directory (`app/routes/api`). So `app/routes/api/keyword/serp/index.ts` maps to `/keyword/serp`.
+*   **Authentication:** Routes under the logical `/api` path (as checked in [app/plugins/auth.ts](mdc:app/plugins/auth.ts) via `request.url.startsWith('/api/')` - though note the actual registered path doesn't include `/api` due to autoload config) require an `x-api-key` header. *Correction: Based on the final `app/index.ts` autoload config, the routes are registered directly under `/`, e.g., `/keyword/serp`. The auth plugin still correctly checks `request.url` which will include the full path.*
+*   **Documentation:** API documentation is automatically generated using `@fastify/swagger` and `@fastify/swagger-ui`.
+    *   Accessible at `/docs`.
+    *   Route schemas defined within individual route files (e.g., in [app/routes/api/keyword/serp/index.ts](mdc:app/routes/api/keyword/serp/index.ts)) populate the Swagger documentation.
+
+## Running the Application
+
+*   Development (with watch mode): `npm run dev`
+*   Build: `npm run build` (Output to `dist/`)
+*   Start (production): `npm run start`

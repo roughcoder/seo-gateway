@@ -1,0 +1,36 @@
+// Domain: Related Results - Represents the metadata for a set of related keywords from a Task
+
+model RelatedResult {
+  // ID
+  id               String   @id @default(cuid())
+
+  // Required Foreign Keys
+  taskId           String   @map("task_id") // Link to the Task that generated this result metadata
+  seedKeywordId    String   @map("seed_keyword_id") // Link to the SEED Keyword this result is for
+
+  // Metadata from API Result Array
+  seType           String?  @map("se_type") // e.g., "google"
+  seedKeywords     String[] @map("seed_keywords") // The seed keywords array echoed in the result
+  locationCode     Int?     @map("location_code")
+  languageCode     String?  @map("language_code")
+  totalCount       BigInt?  @map("total_count") // Use BigInt for potentially large counts
+  itemsCount       Int?     @map("items_count") // Number of related items/keywords returned
+  offset           Int?
+
+  // Timestamps (REQUIRED for ALL models)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  task             Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  // NOTE: This assumes the seedKeywordId refers to the Keyword model.
+  // Adjust relation name if needed, ensuring it doesn't conflict with existing relations on Keyword.
+  seedKeyword      Keyword  @relation("RelatedResultSeed", fields: [seedKeywordId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([taskId])
+  @@index([seedKeywordId])
+
+  // Mapping
+  @@map("related_results")
+} 

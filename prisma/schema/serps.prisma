@@ -1,0 +1,39 @@
+// Domain: Serps - Represents the metadata of a fetched Search Engine Results Page
+
+model Serp {
+  // ID
+  id                      String    @id @default(cuid())
+
+  // Required Foreign Keys
+  taskId                  String    @map("task_id") // Link to the Task that fetched this SERP
+  keywordId               String    @map("keyword_id") // Link to the Keyword this SERP is for
+
+  // SERP Metadata from API
+  type                    String?   // e.g., "organic"
+  seDomain                String?   @map("se_domain") // Search engine domain
+  locationCode            Int?      @map("location_code")
+  languageCode            String?   @map("language_code")
+  checkUrl                String?   @map("check_url") // URL checked
+  fetchTimestampFromApi   DateTime? @map("fetch_timestamp_from_api") // Timestamp from the API result's datetime field
+  itemTypes               String[]  @map("item_types") // List of item types present (e.g., ["organic", "paid"])
+  seResultsCount          BigInt?   @map("se_results_count") // Total results reported by the search engine
+  itemsCount              Int?      @map("items_count") // Number of items returned in the API result
+  refinementChips         Json? @map("refinement_chips") // Changed back to Json? to try and prevent drop/recreate
+
+  // Timestamps (REQUIRED for ALL models)
+  createdAt               DateTime  @default(now()) @map("created_at") // Timestamp when the record was created in our DB
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  task                    Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  keyword                 Keyword   @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+  result                  Result[]
+
+  // Indexes
+  @@index([taskId])
+  @@index([keywordId])
+  @@index([createdAt]) // Index for sorting/finding recent SERPs
+
+  // Mapping
+  @@map("serps")
+} 

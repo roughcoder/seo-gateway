@@ -1,0 +1,27 @@
+// Domain: Jobs - Represents a group of tasks (e.g., a single API request batch)
+
+model Job {
+  // ID
+  id              String   @id @default(cuid())
+
+  // Optional API Metadata from DataForSEO
+  status          String?  // e.g., PENDING, RUNNING, COMPLETED, FAILED
+  version         String?  // API Version from DataForSEO
+  statusCode      Int?     @map("status_code")
+  statusMessage   String?  @map("status_message")
+  time            String?  // Overall time taken from DataForSEO job response
+  cost            Float?   // Overall cost from DataForSEO job response
+  tasksCount      Int?     @map("tasks_count")
+  tasksError      Int?     @map("tasks_error")
+
+  // Timestamps (REQUIRED for ALL models)
+  requestTimestamp DateTime @map("request_timestamp") // Renamed for clarity, still required
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  tasks           Task[] // Relation to tasks associated with this job
+
+  // Mapping
+  @@map("jobs")
+} 

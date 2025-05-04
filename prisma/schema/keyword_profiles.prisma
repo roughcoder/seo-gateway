@@ -1,0 +1,60 @@
+// Domain: Keyword Profiles - Stores detailed metrics and properties for keywords at specific locations/languages
+
+model KeywordProfile {
+  // ID
+  id        String   @id @default(cuid())
+
+  // Foreign Key to Keyword
+  keywordId String   @map("keyword_id")
+
+  // Part of unique constraint
+  locationCode Int    @map("location_code")
+  languageCode String @map("language_code")
+
+  // Keyword Info Data (from keyword_info)
+  kiLastCheck        DateTime? @map("ki_last_check") // Consider renaming or mapping? Using lastUpdatedTime from API?
+  kiCompetition      Float?    @map("ki_competition")
+  kiCompetitionLevel String?   @map("ki_competition_level")
+  kiCpc              Float?    @map("ki_cpc")
+  kiSearchVolume     Int?      @map("ki_search_volume")
+  kiLowTopOfPageBid  Float?    @map("ki_low_top_of_page_bid")
+  kiHighTopOfPageBid Float?    @map("ki_high_top_of_page_bid")
+  kiCategories       Int[]     @map("ki_categories") // Array of numbers
+  kiMonthlySearches  Json?     @map("ki_monthly_searches") // Store array of objects as JSON
+
+  // Keyword Properties Data (from keyword_properties)
+  kpSynonymClusteringAlgorithm String? @map("kp_synonym_clustering_algorithm")
+  kpKeywordDifficulty          Int?    @map("kp_keyword_difficulty")
+  kpDetectedLanguage           String? @map("kp_detected_language")
+  kpIsAnotherLanguage          Boolean? @map("kp_is_another_language")
+
+  // Avg Backlinks Info Data (from avg_backlinks_info)
+  avgBacklinks             Float?    @map("avg_backlinks")
+  avgDofollow              Float?    @map("avg_dofollow")
+  avgReferringPages        Float?    @map("avg_referring_pages")
+  avgReferringDomains      Float?    @map("avg_referring_domains")
+  avgReferringMainDomains  Float?    @map("avg_referring_main_domains")
+  avgRank                  Float?    @map("avg_rank")
+  avgMainDomainRank        Float?    @map("avg_main_domain_rank")
+  avgLastUpdatedTime       DateTime? @map("avg_last_updated_time")
+
+  // Search Intent Info Data (from search_intent_info)
+  siMainIntent             String?   @map("si_main_intent")
+
+  // --- Added Field for Caching Related Keywords ---
+  relatedKeywordIds      String[]  @default([]) @map("related_keyword_ids") // Store IDs of related keywords found for this profile
+
+  // Timestamps (REQUIRED for ALL models)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  keyword   Keyword  @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+
+  // Constraints & Indexes
+  @@unique([keywordId, locationCode, languageCode], name: "keyword_location_language_unique") // Unique constraint based on keyword, location, and language
+  @@index([keywordId])
+
+  // Mapping
+  @@map("keyword_profiles")
+} 

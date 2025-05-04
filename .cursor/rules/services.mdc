@@ -1,0 +1,38 @@
+---
+description: 
+globs: app/services/*.ts,app/services/**,app/services/*.*
+alwaysApply: false
+---
+# Database Service Layer (`app/services`)
+
+This directory contains TypeScript modules responsible for interacting with the database using Prisma Client. Each file typically corresponds to a specific database model (domain).
+
+## Purpose
+
+*   Encapsulate database query logic for different data models.
+*   Provide typed functions for common database operations (CRUD).
+*   Handle Prisma-specific errors gracefully (e.g., unique constraints, foreign key violations).
+*   Abstract database interaction details from the rest of the application (e.g., API routes).
+
+## Naming Convention
+
+Service files follow the pattern `[domain].server.ts`, where `[domain]` is the plural name of the corresponding Prisma model.
+
+Examples:
+*   [keywords.server.ts](mdc:app/services/keywords.server.ts): Handles operations for the `Keyword` model.
+*   [jobs.server.ts](mdc:app/services/jobs.server.ts): Handles operations for the `Job` model.
+*   [results.server.ts](mdc:app/services/results.server.ts): Handles operations for the `Result` model.
+*   [serps.server.ts](mdc:app/services/serps.server.ts): Handles operations for the `Serp` model.
+*   [tasks.server.ts](mdc:app/services/tasks.server.ts): Handles operations for the `Task` model.
+
+## Structure & Common Patterns
+
+*   **Prisma Client**: Each service file currently instantiates its own `PrismaClient`. Consider refactoring to use a shared instance (e.g., from `app/lib/db.server.ts` if created).
+*   **Data Interfaces**: Each file defines interfaces (e.g., `CreateKeywordData`, `CreateJobData`) for the data required by its functions.
+*   **`insert` Functions**: Commonly provide `insert[Domain]` functions (e.g., `insertKeyword`, `insertJob`).
+    *   These functions take a data object matching the corresponding interface.
+    *   They use `prisma.[model].create`.
+    *   They often use `select` to return only specific fields (e.g., `{ id: string }`).
+    *   They include `try...catch` blocks to handle `Prisma.PrismaClientKnownRequestError` errors, logging specific codes like `P2002` (unique constraint) and `P2003` (foreign key constraint).
+*   **Field Mapping**: Be aware of potential mapping between input data fields and Prisma model fields. For example, in [tasks.server.ts](mdc:app/services/tasks.server.ts), the input `apiTaskId` is mapped to the `id` field in the Prisma `Task` model.
+*   **Return Values**: Functions typically return the newly created record's identifier or a specific subset of fields, or `null` if an error occurs during the database operation.

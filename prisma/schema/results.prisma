@@ -1,0 +1,29 @@
+// Domain: Results - Represents individual items within a SERP (e.g., organic listing)
+
+model Result {
+  // ID
+  id        String   @id @default(cuid())
+
+  // Required Foreign Key
+  serpId    String   @map("serp_id") // Link to the SERP this result belongs to
+
+  // Core Result Data from API
+  position  Int      // Absolute rank position
+  url       String   @db.Text // URL of the result
+  type      String?  // e.g., "organic", "paid"
+  title     String?  @db.Text // Title of the result
+  snippet   String?  @db.Text // Description snippet
+
+  // Timestamps (REQUIRED for ALL models)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  serp      Serp     @relation(fields: [serpId], references: [id], onDelete: Cascade)
+
+  // Indexes
+  @@index([serpId])
+
+  // Mapping
+  @@map("results")
+} 

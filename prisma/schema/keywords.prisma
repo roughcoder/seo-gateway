@@ -1,0 +1,37 @@
+// Domain: Keywords - Represents the search keywords used for SERP lookups
+
+model Keyword {
+  // ID
+  id        String   @id @default(cuid())
+
+  // Required fields
+  text      String   @unique // The actual keyword text
+
+  // --- Added Fields for Keyword Ideas data ---
+  kiLastCheck              DateTime? // Timestamp of last Keyword Ideas API update
+  kiCompetition            Float?    // Keyword Ideas: Competition score
+  kiCompetitionLevel       String?   // Keyword Ideas: Competition level (e.g., "HIGH")
+  kiCpc                    Float?    // Keyword Ideas: Cost Per Click
+  kiSearchVolume           Int?      // Keyword Ideas: Average monthly search volume
+  kiLowTopOfPageBid        Float?    // Keyword Ideas: Low top-of-page bid
+  kiHighTopOfPageBid       Float?    // Keyword Ideas: High top-of-page bid
+  kiKeywordDifficulty      Int?      // Keyword Ideas: Keyword difficulty score
+  kiMainIntent             String?   // Keyword Ideas: Main search intent (e.g., "transactional")
+  kiLastUpdatedKeywordInfo DateTime? // Keyword Ideas: Timestamp from API's keyword_info.last_updated_time
+  // --- End Added Fields ---
+
+  // Timestamps (REQUIRED for ALL models)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  serps     Serp[]   // A keyword can be associated with multiple SERPs
+  tasksAsSeed        Task[]            @relation("SeedKeywordTasks") // Tasks where this keyword is the seed
+  relationsAsSeed    KeywordRelation[] @relation("SeedKeyword")      // Relations where this keyword is the seed
+  relationsAsRelated KeywordRelation[] @relation("RelatedKeyword")    // Relations where this keyword is related
+  relatedResults     RelatedResult[]   @relation("RelatedResultSeed")   // Inverse relation for RelatedResult seed keywords
+  keywordProfiles    KeywordProfile[]  // Profiles associated with this keyword
+
+  // Mapping
+  @@map("keywords")
+} 

@@ -1,0 +1,27 @@
+// Domain: Keyword Relations - Defines the relationship between seed keywords and related keywords found via API
+
+model KeywordRelation {
+  // ID
+  id               String   @id @default(cuid())
+
+  // Required Foreign Keys
+  seedKeywordId    String   @map("seed_keyword_id") // Foreign key to the seed Keyword
+  relatedKeywordId String   @map("related_keyword_id") // Foreign key to the related Keyword
+  taskId           String   @map("task_id") // Foreign key to the Task that generated this relation
+
+  // Timestamps (REQUIRED for ALL models)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  seedKeyword    Keyword @relation("SeedKeyword", fields: [seedKeywordId], references: [id], onDelete: Cascade)
+  relatedKeyword Keyword @relation("RelatedKeyword", fields: [relatedKeywordId], references: [id], onDelete: Cascade)
+  task           Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  // Constraints & Indexes
+  @@unique([seedKeywordId, relatedKeywordId]) // Prevent duplicate relationships
+  @@index([taskId])
+
+  // Mapping
+  @@map("keyword_relations")
+} 

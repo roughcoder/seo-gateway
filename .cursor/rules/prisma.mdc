@@ -1,0 +1,398 @@
+---
+description: 
+globs: *.prisma,prisma/**
+alwaysApply: false
+---
+---
+description: Rules for Prisma schema development including best practices for models, relationships, and migrations with PostgreSQL
+globs: ["*.prisma"]
+alwaysApply: true
+---
+
+# Prisma Schema Development Guidelines
+
+Follow these guidelines when creating and modifying Prisma schema files for this project:
+
+IMPORTANT: all schema files should be made within the prisma/schema folder
+
+## Project Structure
+
+Our Prisma setup follows this folder structure:
+
+```
+prisma/
+├── migrations/                # Migration files (auto-generated, DO NOT MODIFY)
+└── schema/                     # Main schema file that imports domain-specific schemas
+    ├── schema.prisma              # Main schema file that imports domain-specific schemas
+    ├── [domain].prisma        # domain-related models
+    ├── [domain].prisma        # domain-related models
+    └── [domain].prisma        # domain-related models
+```
+
+## Schema Structure
+
+Our main Prisma schema (schema.prisma) follows this structure:
+
+```prisma
+// 1. Data source & generator blocks at the top
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions", "prismaSchemaFolder"]
+}
+
+```
+
+Each domain-specific schema follows this structure:
+
+```prisma
+// 1. Enums related to this domain
+enum UserRole {
+  USER
+  ADMIN
+}
+
+// 2. Models related to this domain
+model User {
+  // Fields
+}
+
+model Profile {
+  // Fields
+}
+```
+
+## Naming Conventions
+
+- Use **PascalCase** for model and enum names (e.g., `UserProfile`, `CardType`)
+- Use **camelCase** for field names (e.g., `firstName`, `createdAt`)
+- Use **SCREAMING_SNAKE_CASE** for enum values (e.g., `ADMIN`, `USER`)
+- Use **snake_case** for database names, when specified with `@map` or `@@map`
+
+## Model Structure
+
+Models should be structured as follows:
+
+1. ID field first
+2. Required fields
+3. Optional fields
+4. Timestamps (required for ALL models)
+5. Relations
+6. Indexes and constraints
+
+Example:
+
+```prisma
+model User {
+  // ID
+  id        String   @id @default(cuid())
+  
+  // Required fields
+  email     String   @unique
+  username  String   @unique
+  password  String
+  role      UserRole @default(USER)
+  
+  // Optional fields
+  firstName String?
+  lastName  String?
+  bio       String?  @db.Text
+  
+  // Timestamps (REQUIRED for ALL models)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  profile   Profile?
+  games     Game[]
+  decks     Deck[]
+  
+  // Indexes and constraints
+  @@index([email])
+  @@map("users")
+}
+```
+
+## Required Fields for All Models
+
+Every model MUST include the following fields:
+
+```prisma
+// ID field
+id        String   @id @default(cuid())
+
+// Timestamp fields (required for all tables)
+createdAt DateTime @default(now()) @map("created_at")
+updatedAt DateTime @updatedAt @map("updated_at")
+```
+
+## Field Types and Attributes
+
+### IDs
+
+- Always use cuid for primary keys:
+  ```prisma
+  id String @id @default(cuid())
+  ```
+- Never use auto-increment numeric IDs or CUID
+
+### Common Field Types
+
+- `String`: For text data
+  - Use `@db.VarChar(n)` for fixed-length strings
+  - Use `@db.Text` for longer content
+- `Int`: For numeric data and counts
+- `Float`: For decimal numbers
+- `Boolean`: For true/false flags
+- `DateTime`: For timestamps and dates
+- `Json`: For structured data
+- `Bytes`: For binary data
+
+### Important Field Attributes
+
+- `@id`: Designates the primary key
+- `@unique`: Creates a unique constraint
+- `@default(value)`: Sets default value
+- `@relation`: Defines relationship details
+- `@map("column_name")`: Maps to different column name
+- `@updatedAt`: Automatically updates timestamp
+- `@@index([field1, field2])`: Creates database index
+- `@@unique([field1, field2])`: Creates composite unique constraint
+
+## Relationships
+
+### One-to-One
+
+```prisma
+model User {
+  id        String   @id @default(cuid())
+  profile   Profile?
+}
+
+model Profile {
+  id        String  @id @default(cuid())
+  userId    String  @unique
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+```
+
+### One-to-Many
+
+```prisma
+model User {
+  id        String   @id @default(cuid())
+  posts     Post[]
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+```
+
+### Many-to-Many
+
+```prisma
+model User {
+  id        String     @id @default(cuid())
+  games     Game[]     @relation("UserGames")
+}
+
+model Game {
+  id        String     @id @default(cuid())
+  players   User[]     @relation("UserGames")
+}
+```
+
+### Self-Relations
+
+```prisma
+model User {
+  id              String    @id @default(cuid())
+  followerId      String?
+  following       User[]    @relation("UserFollows")
+  followedBy      User[]    @relation("UserFollows")
+}
+```
+
+## Advanced Features
+
+### Composite Types
+
+```prisma
+model Card {
+  id          String     @id @default(cuid())
+  name        String
+  deploy      Int?
+  power       Int?
+  ability     Int?
+  
+  @@unique([name, deploy])
+}
+```
+
+### Indexes
+
+```prisma
+model User {
+  id        String   @id @default(cuid())
+  email     String
+  lastName  String
+  firstName String
+  
+  // Single field index
+  @@index([email])
+  
+  // Composite index
+  @@index([lastName, firstName])
+}
+```
+
+### Soft Delete Pattern
+
+```prisma
+model Post {
+  id          String    @id @default(cuid())
+  title       String
+  content     String
+  deleted     Boolean   @default(false)
+  deletedAt   DateTime?
+  
+  @@index([deleted])
+}
+```
+
+## Database Mapping
+
+Map Prisma models and fields to custom database names:
+
+```prisma
+model UserProfile {
+  id        String @id @default(cuid())
+  userId    String
+  biography String @db.Text
+  
+  @@map("user_profiles")
+}
+```
+
+## Commenting
+
+- Use comments to explain complex relationships or business rules
+- Include descriptive comments for fields that aren't self-explanatory
+- Document expected values for important fields
+
+Example:
+
+```prisma
+model Game {
+  id            String    @id @default(cuid())
+  
+  // Current game status: waiting, in_progress, completed
+  status        String    @default("waiting")
+  
+  // Game configuration stored as JSON
+  // Example: { "allow_spectators": true, "timer_enabled": false }
+  config        Json?
+  
+  // Relationship to players - max 2 players per game
+  players       User[]
+}
+```
+
+## Migration Best Practices
+
+- **NEVER edit the migration files directly** - These are auto-generated and should be treated as read-only
+- Always run migrations in development first:
+  ```
+  npx prisma migrate dev --name descriptive_name
+  ```
+- Test migrations in a staging environment before applying to production
+- For production migrations, use:
+  ```
+  npx prisma migrate deploy
+  ```
+- Document breaking changes in migration PRs
+- When working on feature branches, coordinate with team members to avoid migration conflicts
+
+## Complete Schema Examples
+
+### Main Schema (schemas/schema.prisma)
+
+```prisma
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["prismaSchemaFolder"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+### Domain Schema Example (schemas/[domain].prisma)
+
+```prisma
+// Domain-specific enums
+enum StatusType {
+  ACTIVE
+  PENDING
+  ARCHIVED
+}
+
+// Domain-specific models
+model MainEntity {
+  id            String      @id @default(cuid())
+  name          String
+  description   String?     @db.Text
+  status        StatusType  @default(ACTIVE)
+  
+  // Timestamps (required)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  
+  // Relations
+  details       DetailEntity?
+  relatedItems  RelatedEntity[]
+  
+  @@index([name])
+  @@map("main_entities")
+}
+
+model DetailEntity {
+  id            String    @id @default(cuid())
+  mainEntityId  String    @unique @map("main_entity_id")
+  data          Json?
+  
+  // Timestamps (required)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  
+  // Relations
+  mainEntity    MainEntity @relation(fields: [mainEntityId], references: [id], onDelete: Cascade)
+  
+  @@map("detail_entities")
+}
+
+model RelatedEntity {
+  id            String    @id @default(cuid())
+  mainEntityId  String    @map("main_entity_id")
+  name          String
+  
+  // Timestamps (required)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  
+  // Relations
+  mainEntity    MainEntity @relation(fields: [mainEntityId], references: [id], onDelete: Cascade)
+  
+  @@index([mainEntityId])
+  @@map("related_entities")
+}
+```
