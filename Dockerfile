@@ -37,4 +37,10 @@ COPY --from=build-env /app/prisma ./prisma
 COPY --from=build-env /app/public ./public
 COPY --from=build-env /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build-env /app/dist ./dist
+
+# Add entrypoint script
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["npm", "run", "start"]
