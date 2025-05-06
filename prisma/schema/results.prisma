@@ -8,21 +8,53 @@ model Result {
   serpId    String   @map("serp_id") // Link to the SERP this result belongs to
 
   // Core Result Data from API
-  position  Int      // Absolute rank position
-  url       String   @db.Text // URL of the result
-  type      String?  // e.g., "organic", "paid"
-  title     String?  @db.Text // Title of the result
-  snippet   String?  @db.Text // Description snippet
+  type              String?  @map("type") // e.g., "organic", "paid"
+  rankAbsolute      Int      @map("rank_absolute") // Absolute rank position (previously 'position')
+  rankGroup         Int?     @map("rank_group")
+  layoutPosition    String?  @map("layout_position") // e.g., "left", "right"
+  xpath             String?  @db.Text @map("xpath")
+  domain            String?  @map("domain")
+  title             String?  @db.Text @map("title")
+  url               String   @db.Text @map("url") // URL of the result
+  cacheUrl          String?  @db.Text @map("cache_url")
+  relatedSearchUrl  String?  @db.Text @map("related_search_url")
+  breadcrumb        String?  @db.Text @map("breadcrumb")
+  websiteName       String?  @map("website_name")
+  description       String?  @db.Text @map("description") // Renamed from 'snippet' for clarity based on API example
+  preSnippet        String?  @db.Text @map("pre_snippet")
+  extendedSnippet   String?  @db.Text @map("extended_snippet")
+  highlighted       String[] @map("highlighted") // Array of highlighted strings
 
-  // Timestamps (REQUIRED for ALL models)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  // Flags
+  isImage           Boolean  @default(false) @map("is_image")
+  isVideo           Boolean  @default(false) @map("is_video")
+  isFeaturedSnippet Boolean  @default(false) @map("is_featured_snippet")
+  isMalicious       Boolean  @default(false) @map("is_malicious")
+  isWebStory        Boolean  @default(false) @map("is_web_story")
+  ampVersion        Boolean  @default(false) @map("amp_version")
+
+  // JSON Fields for structured/complex data (nullable)
+  images            Json?    @map("images")
+  rating            Json?    @map("rating")
+  price             Json?    @map("price")
+  links             Json?    @map("links")
+  faq               Json?    @map("faq")
+  extendedPeopleAlsoSearch Json? @map("extended_people_also_search")
+  aboutThisResult   Json?    @map("about_this_result")
+  relatedResult     Json?    @map("related_result")
+  rectangle         Json?    @map("rectangle")
+
+  // Timestamps
+  timestamp         DateTime? @map("timestamp") // Timestamp from the result item itself, if available
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   // Relations
-  serp      Serp     @relation(fields: [serpId], references: [id], onDelete: Cascade)
+  serp              Serp     @relation(fields: [serpId], references: [id], onDelete: Cascade)
 
   // Indexes
   @@index([serpId])
+  @@index([url]) // Added index on URL
 
   // Mapping
   @@map("results")

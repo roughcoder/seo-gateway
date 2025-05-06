@@ -1,6 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import type { Result, Serp } from "@prisma/client";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import axios from "axios";
 import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 import { insertJob } from "../../../../services/jobs.server.js";
@@ -43,6 +43,42 @@ interface SerpItem {
 	url: string;
 	title?: string | null;
 	description?: string | null;
+	rank_group?: number | null;
+	position?: string | null; // layout position e.g., "left"
+	xpath?: string | null;
+	domain?: string | null;
+	cache_url?: string | null;
+	related_search_url?: string | null;
+	breadcrumb?: string | null;
+	website_name?: string | null;
+	is_image?: boolean | null;
+	is_video?: boolean | null;
+	is_featured_snippet?: boolean | null;
+	is_malicious?: boolean | null;
+	is_web_story?: boolean | null;
+	pre_snippet?: string | null;
+	extended_snippet?: string | null;
+	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	images?: any | null; // Use 'any' or a more specific type if known
+	amp_version?: boolean | null;
+	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	rating?: any | null; // Use 'any' or a more specific type if known
+	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	price?: any | null; // Use 'any' or a more specific type if known
+	highlighted?: string[] | null;
+	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	links?: any | null; // Use 'any' or a more specific type if known
+	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	faq?: any | null; // Use 'any' or a more specific type if known
+	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	extended_people_also_search?: any | null; // Use 'any'
+	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	about_this_result?: any | null; // Use 'any'
+	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	related_result?: any | null; // Use 'any'
+	timestamp?: string | null; // API might return as string
+	// biome-ignore lint/suspicious/noExplicitAny: <explanation>
+	rectangle?: any | null; // Use 'any'
 }
 
 // Interface for the structure of a task object from the DataForSEO API response
@@ -332,11 +368,43 @@ const serp: FastifyPluginAsync = async (fastify, opts): Promise<void> => {
 									.filter((i: SerpItem) => i.type === "organic")
 									.map((item: SerpItem) => ({
 										serpId: serpId,
-										position: item.rank_absolute,
+										// Map core fields
+										rankAbsolute: item.rank_absolute,
 										url: item.url,
 										type: item.type,
 										title: item.title,
-										snippet: item.description,
+										description: item.description, // Changed from snippet
+										// Map new fields (handle potential null/undefined)
+										rankGroup: item.rank_group ?? null,
+										layoutPosition: item.position ?? null,
+										xpath: item.xpath ?? null,
+										domain: item.domain ?? null,
+										cacheUrl: item.cache_url ?? null,
+										relatedSearchUrl: item.related_search_url ?? null,
+										breadcrumb: item.breadcrumb ?? null,
+										websiteName: item.website_name ?? null,
+										preSnippet: item.pre_snippet ?? null,
+										extendedSnippet: item.extended_snippet ?? null,
+										highlighted: item.highlighted ?? [],
+										// Flags (default to false if null/undefined)
+										isImage: item.is_image ?? false,
+										isVideo: item.is_video ?? false,
+										isFeaturedSnippet: item.is_featured_snippet ?? false,
+										isMalicious: item.is_malicious ?? false,
+										isWebStory: item.is_web_story ?? false,
+										ampVersion: item.amp_version ?? false,
+										// JSON fields (pass through null or the object/array)
+										images: item.images ?? Prisma.JsonNull,
+										rating: item.rating ?? Prisma.JsonNull,
+										price: item.price ?? Prisma.JsonNull,
+										links: item.links ?? Prisma.JsonNull,
+										faq: item.faq ?? Prisma.JsonNull,
+										extendedPeopleAlsoSearch: item.extended_people_also_search ?? Prisma.JsonNull,
+										aboutThisResult: item.about_this_result ?? Prisma.JsonNull,
+										relatedResult: item.related_result ?? Prisma.JsonNull,
+										rectangle: item.rectangle ?? Prisma.JsonNull,
+										// Timestamp (convert if necessary, handle null)
+										timestamp: item.timestamp ? new Date(item.timestamp) : null,
 									}));
 
 								if (resultsToInsert.length > 0) {
