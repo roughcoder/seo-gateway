@@ -14,6 +14,8 @@ services:
       - PORT=3000
       # DATABASE_URL for Prisma, connecting to the postgres_prod service
       - DATABASE_URL=postgresql://${POSTGRES_USER:-user_prod}:${SERVICE_PASSWORD_POSTGRES_PROD}@postgres_prod:5432/${POSTGRES_DB:-db_prod}
+      - DIRECT_URL=postgresql://${POSTGRES_USER:-user_prod}:${SERVICE_PASSWORD_POSTGRES_PROD}@postgres_prod:5432/${POSTGRES_DB:-db_prod}
+
       # API_KEY for application's auth plugin
       # IMPORTANT: Replace 'your_production_api_key' with a strong, unique key, ideally from a .env file or secrets management
       - API_KEY=${API_KEY:-your_production_api_key}
