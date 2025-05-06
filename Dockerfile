@@ -34,5 +34,5 @@ COPY package.json package-lock.json ./
 COPY --from=production-dependencies-env /app/node_modules ./node_modules
 COPY --from=build-env /app/prisma ./prisma
 COPY --from=build-env /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=build-env /app/build ./build
+COPY --from=build-env /app/dist ./dist
 CMD ["npm", "run", "start"]

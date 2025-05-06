@@ -8,11 +8,11 @@ const prisma = new PrismaClient();
  */
 interface CreateResultData {
 	serpId: string;
-	position: number;
+	rankAbsolute: number;
 	url: string;
 	type: string;
 	title?: string | null; // Optional fields
-	snippet?: string | null; // Optional fields
+	snippet?: string | null; // Optional fields - Note: Prisma model uses 'description'
 }
 
 /**
@@ -26,11 +26,11 @@ export async function insertResult(resultData: CreateResultData): Promise<{ id: 
 		const newResult = await prisma.result.create({
 			data: {
 				serpId: resultData.serpId,
-				position: resultData.position,
+				rankAbsolute: resultData.rankAbsolute,
 				url: resultData.url,
 				type: resultData.type,
-				title: resultData.title, // Prisma handles undefined/null correctly for optional fields
-				snippet: resultData.snippet,
+				title: resultData.title,
+				description: resultData.snippet,
 			},
 			select: {
 				// Only return the ID
@@ -74,7 +74,7 @@ export async function findResultsBySerpId(serpId: string): Promise<Result[] | nu
 				serpId: serpId,
 			},
 			orderBy: {
-				position: "asc", // Order by rank/position
+				rankAbsolute: "asc",
 			},
 		});
 		return results;
