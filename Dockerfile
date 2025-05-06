@@ -40,7 +40,8 @@ COPY --from=build-env /app/dist ./dist
 
 # Add entrypoint script
 COPY entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+# Ensure script has correct permissions and line endings
+RUN chmod +x /app/entrypoint.sh && sed -i 's/\r$//' /app/entrypoint.sh
 
 ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["npm", "run", "start"]
