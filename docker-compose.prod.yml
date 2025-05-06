@@ -1,0 +1,54 @@
+services:
+  app_prod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # The Dockerfile's final stage is already the production build
+    ports:
+      # The app listens on process.env.PORT or 3000
+      # We map host port 3000 to container port 3000
+      # You can change the host port (left side) if 3000 is taken on your machine
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # DATABASE_URL for Prisma, connecting to the postgres_prod service
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-user_prod}:${SERVICE_PASSWORD_POSTGRES_PROD}@postgres_prod:5432/${POSTGRES_DB:-db_prod}
+      # API_KEY for application's auth plugin
+      # IMPORTANT: Replace 'your_production_api_key' with a strong, unique key, ideally from a .env file or secrets management
+      - API_KEY=${API_KEY:-your_production_api_key}
+      # DATAFORSEO_BEARER token for DataForSEO API
+      # IMPORTANT: Replace 'your_dataforseo_bearer_token' with your actual token
+      - DATAFORSEO_BEARER=${DATAFORSEO_BEARER:-your_dataforseo_bearer_token}
+      # Add any other production-specific environment variables your application needs
+    depends_on:
+      postgres_prod:
+        condition: service_healthy
+    # If you prefer to use a .env file for production, uncomment and create .env.prod:
+    # env_file: .env.prod
+    restart: unless-stopped
+
+  postgres_prod:
+    image: 'postgres:16-alpine'
+    restart: always
+    environment:
+      # Default values are provided but can be overridden by environment variables
+      # on the machine running `docker-compose up` or via an .env file
+      - POSTGRES_DB=${POSTGRES_DB:-db_prod}
+      - POSTGRES_USER=${POSTGRES_USER:-user_prod}
+      - POSTGRES_PASSWORD=${SERVICE_PASSWORD_POSTGRES_PROD}
+    ports:
+      # Map host port 5433 to container port 5432 to avoid conflict
+      # with other PostgreSQL instances (like the one in docker-compose.yml on 6500)
+      - "5433:5432"
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-user_prod} -d $${POSTGRES_DB:-db_prod}"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
+volumes:
+  postgres_prod_data:
+    driver: local 
