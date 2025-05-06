@@ -20,9 +20,7 @@ RUN npm ci
 # Set environment variable from build argument
 ENV GIT_HASH=$GIT_HASH
 
-COPY vite.config.ts ./vite.config.ts
 COPY tsconfig.json ./tsconfig.json
-COPY react-router.config.ts ./react-router.config.ts
 COPY prisma ./prisma
 ARG APP_VERSION=unknown
 ENV APP_VERSION=$APP_VERSION
